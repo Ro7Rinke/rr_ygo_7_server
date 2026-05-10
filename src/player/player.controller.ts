@@ -1,4 +1,10 @@
-import { Controller, Get, Request, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Request,
+  UseGuards,
+  NotFoundException,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -11,10 +17,23 @@ export class PlayerController {
   async getProfile(@Request() req) {
     const user = await this.prisma.user.findUnique({
       where: { id: req.user.userId },
+      select: {
+        id: true,
+        email: true,
+        nickname: true,
+        rp: true,
+        cash: true,
+        wins: true,
+        loses: true,
+        draws: true,
+        createdAt: true,
+      },
     });
-    
-    // Removemos a senha antes de retornar
-    const { password, ...result } = user;
-    return result;
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return user;
   }
 }
