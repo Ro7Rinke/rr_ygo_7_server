@@ -27,6 +27,8 @@ export class PlayerController {
         loses: true,
         draws: true,
         createdAt: true,
+        status: true,
+        is_admin: true
       },
     });
 
