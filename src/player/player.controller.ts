@@ -26,7 +26,7 @@ export class PlayerController {
         wins: true,
         loses: true,
         draws: true,
-        createdAt: true,
+        created_at: true,
         status: true,
         is_admin: true
       },

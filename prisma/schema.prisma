@@ -25,5 +25,67 @@ model User {
   loses     Int      @default(0)
   draws     Int      @default(0)
   
-  createdAt DateTime @default(now())
+  created_at DateTime @default(now())
+}
+
+model Cards {
+  id             Int      @id
+  created_at     DateTime @default(now())
+  updated_at     DateTime?
+  status         Int      @default(0)
+  in_game        Int      @default(0)
+  introduced_by  String?
+  released_by    String?
+
+  hash    String?
+
+  datas CardDatas?
+  texts CardTexts?
+
+  @@map("cards")
+}
+
+model CardDatas {
+  id        Int  @id
+  ot        Int?
+  alias     Int?
+  setcode   Int?
+  type      Int?
+  atk       Int?
+  def       Int?
+  level     Int?
+  race      Int?
+  attribute Int?
+  category  Int?
+
+  card Cards @relation(fields: [id], references: [id], onDelete: Cascade)
+
+  @@map("datas")
+}
+
+model CardTexts {
+  id    Int    @id
+  name  String?
+  desc  String?
+
+  str1  String?
+  str2  String?
+  str3  String?
+  str4  String?
+  str5  String?
+  str6  String?
+  str7  String?
+  str8  String?
+  str9  String?
+  str10 String?
+  str11 String?
+  str12 String?
+  str13 String?
+  str14 String?
+  str15 String?
+  str16 String?
+
+  card Cards @relation(fields: [id], references: [id], onDelete: Cascade)
+
+  @@map("texts")
 }
