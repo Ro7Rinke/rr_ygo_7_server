@@ -26,6 +26,8 @@ model User {
   draws     Int      @default(0)
   
   created_at DateTime @default(now())
+
+  user_cards UserCard[]
 }
 
 model Cards {
@@ -42,21 +44,24 @@ model Cards {
   datas CardDatas?
   texts CardTexts?
 
+  booster_cards BoosterCard[]
+  user_cards UserCard[] 
+
   @@map("cards")
 }
 
 model CardDatas {
   id        Int  @id
-  ot        Int?
-  alias     Int?
-  setcode   Int?
-  type      Int?
+  ot        BigInt?
+  alias     BigInt?
+  setcode   BigInt?
+  type      BigInt?
   atk       Int?
   def       Int?
-  level     Int?
-  race      Int?
-  attribute Int?
-  category  Int?
+  level     BigInt?
+  race      BigInt?
+  attribute BigInt?
+  category  BigInt?
 
   card Cards @relation(fields: [id], references: [id], onDelete: Cascade)
 
@@ -88,4 +93,106 @@ model CardTexts {
   card Cards @relation(fields: [id], references: [id], onDelete: Cascade)
 
   @@map("texts")
+}
+
+model Rarity {
+  id     Int    @id
+  code   String @unique
+  title  String
+
+  booster_cards BoosterCard[]
+
+  slot_chances BoosterSlotRarityChance[]
+
+  min_slots BoosterSlot[] @relation("min_rarity")
+  max_slots BoosterSlot[] @relation("max_rarity")
+
+  @@map("rarities")
+}
+
+model Booster {
+  id            Int     @id @default(autoincrement())
+  title         String
+  description   String?
+  code          String  @unique
+  price         Int
+  cards_per_pack Int
+  status        Int      @default(0)
+
+  created_at    DateTime @default(now())
+
+  cards BoosterCard[]
+  slots BoosterSlot[]
+
+  @@map("boosters")
+}
+
+model BoosterCard {
+  id         Int @id @default(autoincrement())
+
+  booster_id Int
+  card_id    Int
+  rarity_id  Int
+
+  booster Booster @relation(fields: [booster_id], references: [id], onDelete: Cascade)
+  card    Cards   @relation(fields: [card_id], references: [id], onDelete: Cascade)
+  rarity  Rarity  @relation(fields: [rarity_id], references: [id])
+
+  @@unique([booster_id, card_id])
+  @@map("booster_cards")
+}
+
+model BoosterSlot {
+  id          Int @id @default(autoincrement())
+
+  booster_id  Int
+  position    Int
+
+  min_rarity_id Int
+  max_rarity_id Int
+
+  unit_value  Int?
+
+  booster Booster @relation(fields: [booster_id], references: [id], onDelete: Cascade)
+
+  min_rarity Rarity @relation("min_rarity", fields: [min_rarity_id], references: [id])
+  max_rarity Rarity @relation("max_rarity", fields: [max_rarity_id], references: [id])
+
+  chances BoosterSlotRarityChance[]
+
+  @@unique([booster_id, position])
+  @@map("booster_slots")
+}
+
+model BoosterSlotRarityChance {
+  id Int @id @default(autoincrement())
+
+  slot_id   Int
+  rarity_id Int
+
+  chance    Float
+
+  slot   BoosterSlot @relation(fields: [slot_id], references: [id], onDelete: Cascade)
+  rarity Rarity      @relation(fields: [rarity_id], references: [id])
+
+  @@unique([slot_id, rarity_id])
+  @@map("booster_slot_rarity_chances")
+}
+
+model UserCard {
+  id        Int @id @default(autoincrement())
+
+  user_id   Int
+  card_id   Int
+
+  amount    Int @default(0)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  card Cards @relation(fields: [card_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, card_id])
+  @@map("user_cards")
 }
