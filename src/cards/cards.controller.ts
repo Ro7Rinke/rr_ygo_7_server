@@ -21,7 +21,7 @@ export class CardsController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get()
+  @Get('user')
   getUserCards(@Req() req: any) {
     return this.service.getUserCards(req.user.userId);
   }
