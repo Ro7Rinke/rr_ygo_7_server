@@ -29,6 +29,7 @@ model User {
   user_cards UserCard[]
   games      Game[]
   gamePlayer GamePlayer[]
+  replayHashes ReplayHash[]
 }
 
 model Cards {
@@ -220,6 +221,7 @@ model Game {
   user          User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
   players       GamePlayer[]
 
+  @@unique([user_id, duel_id])
   @@index([user_id])
 }
 
@@ -234,4 +236,16 @@ model GamePlayer {
 
   @@unique([game_id, user_id])
   @@index([game_id])
+}
+
+model ReplayHash {
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  hash       String
+  created_at DateTime @default(now())
+
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, hash])
+  @@index([hash])
 }

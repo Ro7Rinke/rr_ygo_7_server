@@ -6,6 +6,7 @@ import {
   Req,
   BadRequestException,
   UseGuards,
+  Body,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { GameService } from './game.service';
@@ -16,7 +17,7 @@ import type { JwtPayload } from 'src/auth/types/jwt-payload';
 
 @Controller('game')
 export class GameController {
-  constructor(private readonly gameService: GameService) {}
+  constructor(private readonly gameService: GameService) { }
 
   @UseGuards(JwtAuthGuard)
   @Post('upload-replay')
@@ -25,7 +26,7 @@ export class GameController {
     @CurrentUser() user: JwtPayload,
     @UploadedFile() file: Express.Multer.File
   ) {
-    
+
 
     if (!user.userId) {
       throw new BadRequestException('User ID não informado');
@@ -36,5 +37,17 @@ export class GameController {
     }
 
     return this.gameService.createWithReplay(user.userId, file);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('replay-hash/check')
+  checkHashes(
+    @CurrentUser() user: JwtPayload,
+    @Body() body: { hashes: string[] },
+  ) {
+    return this.gameService.checkReplayHashes(
+      user.userId,
+      body.hashes,
+    );
   }
 }

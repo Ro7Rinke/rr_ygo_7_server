@@ -9,6 +9,7 @@ import { ConfigService } from '@nestjs/config';
 import * as fs from 'fs';
 import * as path from 'path';
 import { spawn } from 'child_process';
+import { generateReplayHash } from 'src/common/replays';
 
 @Injectable()
 export class GameService {
@@ -112,7 +113,7 @@ export class GameService {
         });
 
         if (exists) {
-            throw new BadRequestException('Replay já cadastrado');
+            throw new BadRequestException('Duelo já cadastrado');
         }
     }
 
@@ -151,6 +152,19 @@ export class GameService {
         return !p.isAI && 'id' in p;
     }
 
+    private async checkAndSaveHash(userId: number, hash: string) {
+        try {
+            await this.prisma.replayHash.create({
+                data: {
+                    user_id: userId,
+                    hash,
+                },
+            });
+        } catch (err) {
+            throw new BadRequestException('Replay já enviado');
+        }
+    }
+
     async createWithReplay(userId: number, file: Express.Multer.File) {
         const basePath = this.configService.get<string>('FILES_BASE_PATH');
 
@@ -163,6 +177,9 @@ export class GameService {
         }
 
         try {
+            const replayHash = generateReplayHash(file.buffer);
+            await this.checkAndSaveHash(userId, replayHash);
+
             const parsed = await this.parseReplay(file.buffer);
 
             if (!parsed || parsed.error) {
@@ -227,6 +244,8 @@ export class GameService {
             const filePath = path.join(replayDir, `${game.id}.yrpX`);
             fs.writeFileSync(filePath, file.buffer);
 
+            await this.validateAndFinalizeDuel(duelId);
+
             return {
                 gameId: game.id,
                 duelId,
@@ -247,5 +266,141 @@ export class GameService {
 
             throw new InternalServerErrorException('Erro ao processar replay');
         }
+    }
+
+    private async validateAndFinalizeDuel(duelId: string) {
+        const games = await this.prisma.game.findMany({
+            where: { duel_id: duelId },
+            include: {
+                players: true, // relação GamePlayer
+            },
+        });
+
+        if (games.length < 2) {
+            return; // ainda não tem todos os replays
+        }
+
+        //1. validar status = 2
+        const allProcessing = games.every(g => g.status === 2);
+        if (!allProcessing) return;
+
+        //2. validar mesmos players
+        const basePlayers = games[0].players.map(p => p.user_id).sort();
+
+        const samePlayers = games.every(g => {
+            const ids = g.players.map(p => p.user_id).sort();
+            return JSON.stringify(ids) === JSON.stringify(basePlayers);
+        });
+
+        if (!samePlayers) {
+            throw new BadRequestException('Players inconsistentes entre replays');
+        }
+
+        //3. validar donos pertencem ao match
+        const validOwners = games.every(g =>
+            basePlayers.includes(g.user_id),
+        );
+
+        if (!validOwners) {
+            throw new BadRequestException('Owner inválido no match');
+        }
+
+        //4. validar resultado
+        const results = games.map(g => g.result_status);
+
+        const uniqueResults = [...new Set(results)];
+
+        // empate
+        if (!(uniqueResults.length === 1 && uniqueResults[0] === 2)) {
+            // precisa ter um winner (1) e um loser (0)
+            const hasWin = results.includes(1);
+            const hasLose = results.includes(0);
+
+            if (!hasWin || !hasLose) {
+                throw new BadRequestException('Resultados inconsistentes');
+            }
+        }
+
+        for (const game of games) {
+            await this.finalizeGame(game.id);
+        }
+    }
+
+    private async finalizeGame(gameId: number) {
+        const game = await this.prisma.game.findUnique({
+            where: { id: gameId },
+        });
+
+        if (!game) {
+            throw new Error('Game não encontrado');
+        }
+
+        let cash = 0;
+        let rpChange = 0;
+
+        let wins = 0;
+        let loses = 0;
+        let draws = 0;
+
+        if (game.result_status === 1) {
+            cash = 1000;
+            rpChange = 5;
+            wins = 1;
+        } else if (game.result_status === 0) {
+            cash = 500;
+            rpChange = -2;
+            loses = 1;
+        } else {
+            cash = 750;
+            rpChange = 3;
+            draws = 1;
+        }
+
+        await this.prisma.$transaction(async (tx) => {
+            const user = await tx.user.findUnique({
+                where: { id: game.user_id },
+            });
+
+            if (!user) throw new Error('User não encontrado');
+
+            const newRp = Math.max(0, user.rp + rpChange);
+
+            await tx.user.update({
+                where: { id: user.id },
+                data: {
+                    cash: { increment: cash },
+                    rp: newRp,
+                    wins: { increment: wins },
+                    loses: { increment: loses },
+                    draws: { increment: draws },
+                },
+            });
+
+            await tx.game.update({
+                where: { id: game.id },
+                data: {
+                    status: 1, // validado
+                },
+            });
+        });
+    }
+
+    async checkReplayHashes(userId: number, hashes: string[]) {
+        const existing = await this.prisma.replayHash.findMany({
+            where: {
+                user_id: userId,
+                hash: { in: hashes },
+            },
+            select: {
+                hash: true,
+            },
+        });
+
+        const existingSet = new Set(existing.map(h => h.hash));
+
+        return {
+            existing: hashes.filter(h => existingSet.has(h)),
+            missing: hashes.filter(h => !existingSet.has(h)),
+        };
     }
 }
