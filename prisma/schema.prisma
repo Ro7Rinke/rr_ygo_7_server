@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -30,6 +27,8 @@ model User {
   games      Game[]
   gamePlayer GamePlayer[]
   replayHashes ReplayHash[]
+
+  @@map("user")
 }
 
 model Cards {
@@ -67,7 +66,7 @@ model CardDatas {
 
   card Cards @relation(fields: [id], references: [id], onDelete: Cascade)
 
-  @@map("datas")
+  @@map("card_datas")
 }
 
 model CardTexts {
@@ -94,34 +93,36 @@ model CardTexts {
 
   card Cards @relation(fields: [id], references: [id], onDelete: Cascade)
 
-  @@map("texts")
+  @@map("card_texts")
 }
 
 model Rarity {
   id     Int    @id
   code   String @unique
   title  String
+  original_name  String
+
+  level  Int
 
   booster_cards BoosterCard[]
-
-  slot_chances BoosterSlotRarityChance[]
-
-  min_slots BoosterSlot[] @relation("min_rarity")
-  max_slots BoosterSlot[] @relation("max_rarity")
 
   @@map("rarities")
 }
 
 model Booster {
-  id            Int     @id @default(autoincrement())
-  title         String
-  description   String?
-  code          String  @unique
-  price         Int
-  cards_per_pack Int
-  status        Int      @default(0)
+  id             Int     @id @default(autoincrement())
+  title          String
+  description    String?
+  code           String  @unique
 
-  created_at    DateTime @default(now())
+  prefix         String
+  money_type     String
+
+  price          Int
+  cards_per_pack Int
+  status         Int      @default(0)
+
+  created_at     DateTime @default(now())
 
   cards BoosterCard[]
   slots BoosterSlot[]
@@ -150,35 +151,29 @@ model BoosterSlot {
   booster_id  Int
   position    Int
 
-  min_rarity_id Int
-  max_rarity_id Int
-
   unit_value  Int?
 
   booster Booster @relation(fields: [booster_id], references: [id], onDelete: Cascade)
 
-  min_rarity Rarity @relation("min_rarity", fields: [min_rarity_id], references: [id])
-  max_rarity Rarity @relation("max_rarity", fields: [max_rarity_id], references: [id])
-
-  chances BoosterSlotRarityChance[]
+  groups BoosterSlotGroup[]
 
   @@unique([booster_id, position])
   @@map("booster_slots")
 }
 
-model BoosterSlotRarityChance {
+model BoosterSlotGroup {
   id Int @id @default(autoincrement())
 
-  slot_id   Int
-  rarity_id Int
+  slot_id Int
 
-  chance    Float
+  min_rarity_level Int
+  max_rarity_level Int
 
-  slot   BoosterSlot @relation(fields: [slot_id], references: [id], onDelete: Cascade)
-  rarity Rarity      @relation(fields: [rarity_id], references: [id])
+  chance Float
 
-  @@unique([slot_id, rarity_id])
-  @@map("booster_slot_rarity_chances")
+  slot BoosterSlot @relation(fields: [slot_id], references: [id], onDelete: Cascade)
+
+  @@map("booster_slot_groups")
 }
 
 model UserCard {
@@ -217,12 +212,13 @@ model Game {
   created_at    DateTime @default(now())
   updated_at    DateTime @updatedAt
 
-
   user          User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
   players       GamePlayer[]
 
   @@unique([user_id, duel_id])
   @@index([user_id])
+
+  @@map("game")
 }
 
 model GamePlayer {
@@ -236,6 +232,8 @@ model GamePlayer {
 
   @@unique([game_id, user_id])
   @@index([game_id])
+
+  @@map("game_player")
 }
 
 model ReplayHash {
@@ -248,4 +246,5 @@ model ReplayHash {
 
   @@unique([user_id, hash])
   @@index([hash])
+  @@map("replay_hash")
 }

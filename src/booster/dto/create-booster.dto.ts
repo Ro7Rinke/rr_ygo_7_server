@@ -5,6 +5,8 @@ import {
   ValidateNested,
   IsOptional,
   IsNumber,
+  Min,
+  Max,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -16,23 +18,25 @@ class BoosterCardDto {
   rarity_id!: number;
 }
 
-class SlotChanceDto {
+class BoosterSlotGroupDto {
   @IsInt()
-  rarity_id!: number;
+  @Min(0)
+  min_rarity_level!: number;
+
+  @IsInt()
+  @Min(0)
+  max_rarity_level!: number;
 
   @IsNumber()
+  @Min(0)
+  @Max(100)
   chance!: number;
 }
 
 class BoosterSlotDto {
   @IsInt()
+  @Min(1)
   position!: number;
-
-  @IsInt()
-  min_rarity_id!: number;
-
-  @IsInt()
-  max_rarity_id!: number;
 
   @IsOptional()
   @IsInt()
@@ -40,8 +44,8 @@ class BoosterSlotDto {
 
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => SlotChanceDto)
-  chances!: SlotChanceDto[];
+  @Type(() => BoosterSlotGroupDto)
+  groups!: BoosterSlotGroupDto[];
 }
 
 export class CreateBoosterDto {
@@ -51,11 +55,18 @@ export class CreateBoosterDto {
   @IsString()
   code!: string;
 
+  @IsString()
+  prefix!: string;
+
+  @IsString()
+  money_type!: string;
+
   @IsOptional()
   @IsString()
   description?: string;
 
   @IsInt()
+  @Min(0)
   price!: number;
 
   @IsArray()
