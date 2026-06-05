@@ -20,12 +20,16 @@ export class AuthService {
     }
 
     const hashedPassword = await bcrypt.hash(data.password, 10);
-    
+    const newPlayerData = {
+      nickname: data.nickname,
+      email: data.email,
+      password: hashedPassword,
+      cash: 2000,
+      tickets: 5,
+      gold_tickets: 5
+    }
     return this.prisma.user.create({
-      data: {
-        ...data,
-        password: hashedPassword,
-      },
+      data: newPlayerData
     });
   }
 

@@ -17,6 +17,8 @@ model User {
   
   rp        Int      @default(0)
   cash      Int      @default(0)
+  tickets   Int      @default(0)
+  gold_tickets   Int  @default(0)     
   wins      Int      @default(0)
   loses     Int      @default(0)
   draws     Int      @default(0)
@@ -46,6 +48,7 @@ model Cards {
   texts CardTexts?
 
   booster_cards BoosterCard[]
+  selaed_deck_cards SealedDeckCard[]
   user_cards UserCard[] 
 
   @@map("cards")
@@ -105,6 +108,7 @@ model Rarity {
   level  Int
 
   booster_cards BoosterCard[]
+  sealed_deck_cards SealedDeckCard[]
 
   @@map("rarities")
 }
@@ -121,8 +125,10 @@ model Booster {
   price          Int
   cards_per_pack Int
   status         Int      @default(0)
+  sale_status    Int      @default(0)
 
   created_at     DateTime @default(now())
+  updated_at    DateTime? @updatedAt
 
   cards BoosterCard[]
   slots BoosterSlot[]
@@ -247,4 +253,42 @@ model ReplayHash {
   @@unique([user_id, hash])
   @@index([hash])
   @@map("replay_hash")
+}
+
+model SealedDeck {
+  id             Int     @id @default(autoincrement())
+  title          String
+  description    String?
+  code           String  @unique
+
+  prefix         String
+  money_type     String
+
+  price          Int
+  total_cards    Int
+  status         Int      @default(0)
+  sale_status    Int      @default(0)
+  is_initial     Int      @default(0)
+
+  created_at     DateTime @default(now())
+  updated_at    DateTime? @updatedAt
+
+  cards SealedDeckCard[]
+
+  @@map("sealed_decks")
+}
+
+model SealedDeckCard {
+  id         Int @id @default(autoincrement())
+
+  sealed_deck_id Int
+  card_id    Int
+  rarity_id  Int
+  amount     Int     @default(1)
+
+  sealed_deck SealedDeck @relation(fields: [sealed_deck_id], references: [id], onDelete: Cascade)
+  card    Cards   @relation(fields: [card_id], references: [id], onDelete: Cascade)
+  rarity  Rarity  @relation(fields: [rarity_id], references: [id])
+
+  @@map("sealed_deck_cards")
 }

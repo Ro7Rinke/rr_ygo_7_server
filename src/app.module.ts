@@ -7,6 +7,7 @@ import { PlayerModule } from './player/player.module';
 import { CardsModule } from './cards/cards.module';
 import { BoosterModule } from './booster/booster.module';
 import { GameModule } from './game/game.module';
+import { RarityModule } from './rarity/rarity.module';
 
 @Module({
   imports: [
@@ -17,7 +18,8 @@ import { GameModule } from './game/game.module';
     PlayerModule, 
     CardsModule, 
     BoosterModule,
-    GameModule
+    GameModule,
+    RarityModule
   ],
   controllers: [AppController],
   providers: [AppService],

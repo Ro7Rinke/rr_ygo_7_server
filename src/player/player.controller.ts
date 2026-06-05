@@ -23,6 +23,8 @@ export class PlayerController {
         nickname: true,
         rp: true,
         cash: true,
+        tickets: true,
+        gold_tickets: true,
         wins: true,
         loses: true,
         draws: true,

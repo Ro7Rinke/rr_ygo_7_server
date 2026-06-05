@@ -272,19 +272,17 @@ export class GameService {
         const games = await this.prisma.game.findMany({
             where: { duel_id: duelId },
             include: {
-                players: true, // relação GamePlayer
+                players: true,
             },
         });
 
         if (games.length < 2) {
-            return; // ainda não tem todos os replays
+            return;
         }
 
-        //1. validar status = 2
         const allProcessing = games.every(g => g.status === 2);
         if (!allProcessing) return;
 
-        //2. validar mesmos players
         const basePlayers = games[0].players.map(p => p.user_id).sort();
 
         const samePlayers = games.every(g => {
@@ -296,7 +294,6 @@ export class GameService {
             throw new BadRequestException('Players inconsistentes entre replays');
         }
 
-        //3. validar donos pertencem ao match
         const validOwners = games.every(g =>
             basePlayers.includes(g.user_id),
         );
@@ -305,14 +302,11 @@ export class GameService {
             throw new BadRequestException('Owner inválido no match');
         }
 
-        //4. validar resultado
         const results = games.map(g => g.result_status);
 
         const uniqueResults = [...new Set(results)];
 
-        // empate
         if (!(uniqueResults.length === 1 && uniqueResults[0] === 2)) {
-            // precisa ter um winner (1) e um loser (0)
             const hasWin = results.includes(1);
             const hasLose = results.includes(0);
 
@@ -379,7 +373,7 @@ export class GameService {
             await tx.game.update({
                 where: { id: game.id },
                 data: {
-                    status: 1, // validado
+                    status: 1,
                 },
             });
         });
