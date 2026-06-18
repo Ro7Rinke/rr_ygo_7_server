@@ -30,7 +30,7 @@ export class CardsSyncService {
         }
 
         await this.process(masterPath, otherDbs);
-
+        await new Promise(r => setTimeout(r, 2000));
         this.cleanup();
 
         return { ok: true };

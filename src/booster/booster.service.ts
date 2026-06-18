@@ -86,7 +86,7 @@ export class BoosterService {
 
             if (!user) throw new Error('User not found');
 
-            const moneyField = booster.money_type === 'cash' ? 'cash' : 'ticket';
+            const moneyField = booster.money_type === 'cash' ? 'cash' : 'tickets';
             if (user[moneyField] < booster.price) {
                 throw new BadRequestException(`Not enough ${booster.money_type}`);
             }
