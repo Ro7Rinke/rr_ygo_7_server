@@ -160,7 +160,7 @@ export class BoosterService {
 
                 usedCardsInPack.add(pickedBoosterCard.card_id);
 
-                const currentOwnedAmount = inventoryMap.get(pickedBoosterCard.card_id) || 0;
+                const currentOwnedAmount = (inventoryMap.get(pickedBoosterCard.card_id) as number) || 0;
 
                 if (currentOwnedAmount >= 9) {
                     results.push({
