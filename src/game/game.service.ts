@@ -268,7 +268,7 @@ export class GameService {
         }
     }
 
-    private async validateAndFinalizeDuel(duelId: string) {
+    async validateAndFinalizeDuel(duelId: string) {
         const games = await this.prisma.game.findMany({
             where: { duel_id: duelId },
             include: {

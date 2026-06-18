@@ -14,6 +14,7 @@ import type { Multer } from 'multer';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
 import type { JwtPayload } from 'src/auth/types/jwt-payload';
+import { AdminGuard } from 'src/auth/guards/admin.guard';
 
 @Controller('game')
 export class GameController {
@@ -49,5 +50,11 @@ export class GameController {
       user.userId,
       body.hashes,
     );
+  }
+
+  @Post('finalize-duel')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  finalizeDuel(@Body() body: { duelId: string }) {
+    return this.gameService.validateAndFinalizeDuel(body.duelId)
   }
 }
