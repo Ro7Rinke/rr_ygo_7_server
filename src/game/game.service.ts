@@ -206,9 +206,9 @@ export class GameService {
                 type = 3;
             }
 
-            if (!deckValid) {
-                status = 4;
-            }
+            // if (!deckValid) {
+            //     status = 4;
+            // }
 
             const humanPlayers = resolvedPlayers.filter(this.isHumanPlayer);
 
@@ -268,7 +268,7 @@ export class GameService {
         }
     }
 
-    async validateAndFinalizeDuel(duelId: string) {
+    async validateAndFinalizeDuel(duelId: string, ignoreStatus = false) {
         const games = await this.prisma.game.findMany({
             where: { duel_id: duelId },
             include: {
@@ -280,7 +280,7 @@ export class GameService {
             return;
         }
 
-        const allProcessing = games.every(g => g.status === 2);
+        const allProcessing = ignoreStatus ? games.every(g => g.status >= 1) : games.every(g => g.status === 2);
         if (!allProcessing) return;
 
         const basePlayers = games[0].players.map(p => p.user_id).sort();

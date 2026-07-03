@@ -55,6 +55,6 @@ export class GameController {
   @Post('finalize-duel')
   @UseGuards(JwtAuthGuard, AdminGuard)
   finalizeDuel(@Body() body: { duelId: string }) {
-    return this.gameService.validateAndFinalizeDuel(body.duelId)
+    return this.gameService.validateAndFinalizeDuel(body.duelId, true)
   }
 }
