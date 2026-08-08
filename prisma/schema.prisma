@@ -29,6 +29,7 @@ model User {
   games      Game[]
   gamePlayer GamePlayer[]
   replayHashes ReplayHash[]
+  user_deck  UserDeck[]
 
   @@map("user")
 }
@@ -50,6 +51,8 @@ model Cards {
   booster_cards BoosterCard[]
   selaed_deck_cards SealedDeckCard[]
   user_cards UserCard[] 
+  user_deck_cards UserDeckCard[]
+  plflist_cards PLFListCard[]
 
   @@map("cards")
 }
@@ -291,4 +294,70 @@ model SealedDeckCard {
   rarity  Rarity  @relation(fields: [rarity_id], references: [id])
 
   @@map("sealed_deck_cards")
+}
+
+model UserDeck {
+  id         Int @id @default(autoincrement())
+  user_id    Int
+  title      String
+
+  created_at     DateTime @default(now())
+  updated_at     DateTime? @updatedAt
+
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  cards UserDeckCard[]
+
+  @@map("user_deck")
+}
+
+model UserDeckCard {
+  id         Int @id @default(autoincrement())
+  user_deck_id    Int
+  card_id    Int
+  amount     Int
+
+  created_at     DateTime @default(now())
+  updated_at     DateTime? @updatedAt
+
+  user_deck UserDeck @relation(fields: [user_deck_id], references: [id], onDelete: Cascade)
+  card    Cards   @relation(fields: [card_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_deck_id, card_id])
+  @@map("user_deck_cards")
+}
+
+enum PLFType {
+  LF
+  PW
+}
+
+model PLFList {
+  id            Int @id @default(autoincrement())
+  title         String
+  description   String?
+  type          PLFType
+  status        Int @default(1)
+
+  created_at     DateTime @default(now())
+  updated_at     DateTime? @updatedAt
+
+  cards          PLFListCard[]
+
+  @@unique(title)
+  @@map("plflist")
+}
+
+model PLFListCard {
+  id            Int @id @default(autoincrement())
+  plflist_id    Int
+  card_id       Int
+  status        Int
+  status_title  String
+
+  plflist PLFList @relation(fields: [plflist_id], references: [id], onDelete: Cascade)
+  card    Cards   @relation(fields: [card_id], references: [id], onDelete: Cascade)
+
+  @@unique([plflist_id, card_id])
+  @@map("plflist_cards")
 }

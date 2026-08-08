@@ -8,6 +8,8 @@ import { CardsModule } from './cards/cards.module';
 import { BoosterModule } from './booster/booster.module';
 import { GameModule } from './game/game.module';
 import { RarityModule } from './rarity/rarity.module';
+import { DeckModule } from './decks/deck.module';
+import { PlfListModule } from './plflist/plflist.module';
 
 @Module({
   imports: [
@@ -19,7 +21,9 @@ import { RarityModule } from './rarity/rarity.module';
     CardsModule, 
     BoosterModule,
     GameModule,
-    RarityModule
+    RarityModule,
+    DeckModule,
+    PlfListModule
   ],
   controllers: [AppController],
   providers: [AppService],
