@@ -10,7 +10,14 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { spawn } from 'child_process';
 import { generateReplayHash } from 'src/common/replays';
+import { PLFType } from '@prisma/client';
+import { GameStatus, GameType } from 'src/common/enums/game';
 
+interface ReplayDeck {
+    main?: number[];
+    extra?: number[];
+    side?: number[];
+}
 @Injectable()
 export class GameService {
     constructor(
@@ -138,6 +145,127 @@ export class GameService {
         return true;
     }
 
+    private getDeckCardIds(deck: ReplayDeck): number[] {
+        return [
+            ...(Array.isArray(deck.main) ? deck.main : []),
+            ...(Array.isArray(deck.extra) ? deck.extra : []),
+            ...(Array.isArray(deck.side) ? deck.side : []),
+        ].filter((cardId): cardId is number => Number.isInteger(cardId));
+    }
+
+    private async validateDeckLFList(decks: ReplayDeck[]): Promise<boolean> {
+        const lfList = await this.prisma.pLFList.findFirst({
+            where: {
+                status: 1,
+                type: 'LF',
+            },
+            orderBy: {
+                id: 'asc',
+            },
+            include: {
+                cards: {
+                    select: {
+                        card_id: true,
+                        status: true,
+                    },
+                },
+            },
+        });
+
+        // Sem lista LF ativa: não há restrições para validar.
+        if (!lfList) return true;
+
+        const limitsByCardId = new Map(
+            lfList.cards.map((card) => [card.card_id, card.status]),
+        );
+
+        return decks.every((deck) => {
+            const cardCounts = new Map<number, number>();
+
+            this.getDeckCardIds(deck).forEach((cardId) => {
+                cardCounts.set(cardId, (cardCounts.get(cardId) ?? 0) + 1);
+            });
+
+            for (const [cardId, count] of cardCounts) {
+                const status = limitsByCardId.get(cardId);
+
+                // Carta que não consta na BanList: máximo padrão de 3 cópias.
+                const limit =
+                    status === 0 ? 0 :
+                        status === 1 ? 1 :
+                            status === 2 ? 2 :
+                                3;
+
+                if (count > limit) {
+                    return false;
+                }
+            }
+
+            return true;
+        });
+    }
+
+    private async validateDeckPowerList(decks: ReplayDeck[]): Promise<boolean> {
+        const powerList = await this.prisma.pLFList.findFirst({
+            where: {
+                status: 1,
+                type: 'PW',
+            },
+            orderBy: {
+                id: 'asc',
+            },
+            include: {
+                cards: {
+                    select: {
+                        card_id: true,
+                        status: true,
+                    },
+                },
+            },
+        });
+
+        // Sem PowerList ativa: não há restrições para validar.
+        if (!powerList) return true;
+
+        const categoryByCardId = new Map(
+            powerList.cards.map((card) => [card.card_id, card.status]),
+        );
+
+        return decks.every((deck) => {
+            // PowerList considera cartas diferentes, não cópias.
+            const distinctCardIds = new Set(this.getDeckCardIds(deck));
+
+            let uniqueCards = 0;
+            let legendaryCards = 0;
+            let epicCards = 0;
+
+            distinctCardIds.forEach((cardId) => {
+                const status = categoryByCardId.get(cardId);
+
+                if (status === 1) uniqueCards += 1;
+                if (status === 2) legendaryCards += 1;
+                if (status === 3) epicCards += 1;
+            });
+
+            const uniqueLimit = 1;
+            if (uniqueCards > uniqueLimit) return false;
+
+            // Vaga não usada de Única pode ser usada por Lendária.
+            const legendaryLimit = 1 + (uniqueLimit - uniqueCards);
+            if (legendaryCards > legendaryLimit) return false;
+
+            // Vagas não usadas de Única e Lendária podem ser usadas por Épica.
+            const epicLimit =
+                2 +
+                (uniqueLimit - uniqueCards) +
+                (legendaryLimit - legendaryCards);
+
+            if (epicCards > epicLimit) return false;
+
+            return true;
+        });
+    }
+
     private getResultStatus(parsed: any, userNickname: string): number {
         if (!parsed.winner) return 2;
 
@@ -197,18 +325,26 @@ export class GameService {
             const hasAI = resolvedPlayers.some(p => p.isAI);
 
             const deckValid = await this.validateDeck(userId, parsed.decks);
+            const validLFList = await this.validateDeckLFList(parsed.decks);
+            const validPowerList = await this.validateDeckPowerList(parsed.decks);
 
-            let status = 2;
-            let type = 2;
+            let status = GameStatus.VALID
+            let type = GameType.RANKED
 
             if (hasAI) {
-                status = 3;
-                type = 3;
+                status = GameStatus.AI
+                type = GameType.AI
             }
 
-            // if (!deckValid) {
-            //     status = 4;
-            // }
+            if(!validLFList)
+                status = GameStatus.INVALID_LF
+
+            if(!validPowerList)
+                status = GameStatus.INVALID_PW
+
+            if (!deckValid) {
+                status = GameStatus.INVALID_DECK
+            }
 
             const humanPlayers = resolvedPlayers.filter(this.isHumanPlayer);
 
