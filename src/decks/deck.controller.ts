@@ -1,9 +1,11 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe, UseGuards, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe, UseGuards, BadRequestException, ParseEnumPipe } from '@nestjs/common';
 import { DeckService } from './deck.service';
 import { CreateUserDeckDto, UpdateUserDeckDto, AddDeckCardDto, SyncDeckDto } from './dto/deck.dto';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
 import type { JwtPayload } from 'src/auth/types/jwt-payload';
+import { DeckSlotType } from 'src/common/enums/deck-slot-type';
+import { DeckSlot } from '@prisma/client';
 
 @Controller('deck')
 export class DeckController {
@@ -49,12 +51,13 @@ export class DeckController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Delete(':id/cards/:cardId')
+  @Delete(':id/cards/:cardId/:slot')
   removeCard(
     @Param('id', ParseIntPipe) id: number,
     @Param('cardId', ParseIntPipe) cardId: number,
+    @Param('slot', new ParseEnumPipe(DeckSlot)) slot: DeckSlotType,
   ) {
-    return this.deckService.removeCard(id, cardId);
+    return this.deckService.removeCard(id, cardId, slot);
   }
 
   @UseGuards(JwtAuthGuard)

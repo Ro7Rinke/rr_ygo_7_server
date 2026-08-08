@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDeckDto, UpdateUserDeckDto, AddDeckCardDto, SyncDeckDto } from './dto/deck.dto';
+import { DeckSlotType } from 'src/common/enums/deck-slot-type';
 
 @Injectable()
 export class DeckService {
@@ -41,9 +42,10 @@ export class DeckService {
   addOrUpdateCard(deckId: number, dto: AddDeckCardDto) {
     return this.prisma.userDeckCard.upsert({
       where: {
-        user_deck_id_card_id: {
+        user_deck_id_card_id_slot: {
           user_deck_id: deckId,
           card_id: dto.card_id,
+          slot: dto.slot
         },
       },
       update: { amount: dto.amount },
@@ -56,12 +58,13 @@ export class DeckService {
     });
   }
 
-  removeCard(deckId: number, cardId: number) {
+  removeCard(deckId: number, cardId: number, slot: DeckSlotType) {
     return this.prisma.userDeckCard.delete({
       where: {
-        user_deck_id_card_id: {
+        user_deck_id_card_id_slot: {
           user_deck_id: deckId,
           card_id: cardId,
+          slot
         },
       },
     });
