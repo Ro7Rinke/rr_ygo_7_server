@@ -51,6 +51,7 @@ export class DeckService {
         user_deck_id: deckId,
         card_id: dto.card_id,
         amount: dto.amount,
+        slot: dto.slot,
       },
     });
   }
@@ -115,6 +116,7 @@ export class DeckService {
             user_deck_id: deckId,
             card_id: item.card_id,
             amount: item.amount,
+            slot: item.slot
           })),
         });
       }

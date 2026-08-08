@@ -1,5 +1,6 @@
 import { Type } from 'class-transformer';
-import { IsArray, IsInt, IsNotEmpty, IsOptional, IsString, ValidateNested } from 'class-validator';
+import { IsArray, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, ValidateNested } from 'class-validator';
+import { DeckSlotType } from 'src/common/enums/deck-slot-type';
 
 export class CreateUserDeckDto {
   @IsInt()
@@ -25,6 +26,10 @@ export class AddDeckCardDto {
   @IsInt()
   @IsNotEmpty()
   amount!: number;
+  
+  @IsEnum(DeckSlotType)
+  @IsNotEmpty()
+  slot!: DeckSlotType
 }
 
 export class DeckCardItemDto {
@@ -35,6 +40,10 @@ export class DeckCardItemDto {
   @IsInt()
   @IsNotEmpty()
   amount!: number;
+
+  @IsEnum(DeckSlotType)
+  @IsNotEmpty()
+  slot!: DeckSlotType
 }
 
 export class SyncDeckDto {

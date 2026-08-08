@@ -311,11 +311,17 @@ model UserDeck {
   @@map("user_deck")
 }
 
+enum DeckSlot {
+  M
+  E
+  S
+}
 model UserDeckCard {
   id         Int @id @default(autoincrement())
   user_deck_id    Int
   card_id    Int
   amount     Int
+  slot       DeckSlot
 
   created_at     DateTime @default(now())
   updated_at     DateTime? @updatedAt
