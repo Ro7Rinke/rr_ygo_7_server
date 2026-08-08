@@ -321,7 +321,7 @@ model UserDeckCard {
   user_deck_id    Int
   card_id    Int
   amount     Int
-  slot       DeckSlot
+  slot       DeckSlot @default(M)
 
   created_at     DateTime @default(now())
   updated_at     DateTime? @updatedAt
