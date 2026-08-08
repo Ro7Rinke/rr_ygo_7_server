@@ -329,7 +329,7 @@ model UserDeckCard {
   user_deck UserDeck @relation(fields: [user_deck_id], references: [id], onDelete: Cascade)
   card    Cards   @relation(fields: [card_id], references: [id], onDelete: Cascade)
 
-  @@unique([user_deck_id, card_id])
+  @@unique([user_deck_id, card_id, slot])
   @@map("user_deck_cards")
 }
 
