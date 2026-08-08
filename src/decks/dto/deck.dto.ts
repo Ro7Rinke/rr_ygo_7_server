@@ -43,7 +43,7 @@ export class SyncDeckDto {
   id?: number; // Se enviado, atualiza; se omitido, cria um novo
 
   @IsInt()
-  @IsNotEmpty()
+  @IsOptional()
   user_id?: number;
 
   @IsString()

@@ -60,7 +60,7 @@ export class DeckController {
   @UseGuards(JwtAuthGuard)
   @Post('sync')
   syncDeck(@CurrentUser() user: JwtPayload, @Body() dto: SyncDeckDto) {
-    
+
     if (!user.userId) {
       throw new BadRequestException('User ID não informado');
     }
